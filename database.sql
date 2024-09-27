@@ -74,6 +74,16 @@ CREATE TABLE products(
 );
 
 -- Product images table
+CREATE TABLE product_images(
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    product_id INT, -- foreign key
+    FOREIGN KEY (product_id) REFERENCES products(id), -- reference to products table
+    CONSTRAINT fk_product_images_product_id
+        FOREIGN KEY (product_id) 
+        REFERENCES products(id) ON DELETE CASCADE,
+        -- when the product is deleted, the images are also deleted
+    image_url VARCHAR(300) NOT NULL DEFAULT '' COMMENT 'url of the product image'
+)
 
 -- Orders table
 CREATE TABLE orders(
