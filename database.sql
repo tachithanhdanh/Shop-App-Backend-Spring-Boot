@@ -19,6 +19,15 @@ CREATE TABLE users (
     google_account_id VARCHAR(100) DEFAULT '' -- Google ID of the user, default is empty string
 );
 
+-- Roles for users
+CREATE TABLE roles (
+    id INT PRIMARY KEY, -- no need to auto increment since roles are predefined and limited
+    `name` VARCHAR(50) NOT NULL -- name of the role, cannot be empty
+);
+
+ALTER TABLE users ADD COLUMN role_id INT; -- add role_id column to users table
+ALTER TABLE users ADD FOREIGN KEY (role_id) REFERENCES roles(id); -- add foreign key constraint to role_id column
+
 -- Tokens for authentication
 -- Token: JWT token
 -- tokens and users are related, one user can have multiple tokens
@@ -62,4 +71,44 @@ CREATE TABLE products(
     updated_at DATETIME,
     category_id INT, -- foreign key
     FOREIGN KEY (category_id) REFERENCES categories(id) -- reference to categories table
+);
+
+-- Product images table
+
+-- Orders table
+CREATE TABLE orders(
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    user_id INT, -- foreign key
+    FOREIGN KEY (user_id) REFERENCES users(id), -- reference to users table
+    fullname VARCHAR(100) DEFAULT '' COMMENT 'full name of the customer', -- can be different from the user's full name
+    email VARCHAR(100) DEFAULT '' COMMENT 'email of the customer', -- can be empty
+    phone_number VARCHAR(10) NOT NULL, -- phone number of the customer, cannot be empty
+    `address` VARCHAR(200) NOT NULL, -- address of the customer, cannot be empty
+    note VARCHAR(100) DEFAULT '' COMMENT 'note for the order', -- can be empty
+    order_date DATETIME COMMENT 'date when the order is created' DEFAULT CURRENT_TIMESTAMP,
+    `status` VARCHAR(20) COMMENT 'status of the order',
+    total_money FLOAT COMMENT 'total money of the order' CHECK (total_money >= 0) -- total money cannot be negative
+);
+
+ALTER TABLE orders ADD COLUMN `shipping_method` VARCHAR(100); -- shipping method is the way to deliver the order
+ALTER TABLE orders ADD COLUMN `shipping_address` VARCHAR(200); -- shipping address is the address where the order will be delivered
+ALTER TABLE orders ADD COLUMN `shipping_date` DATE;
+ALTER TABLE orders ADD COLUMN `tracking_number` VARCHAR(100); -- tracking number is used to track the order
+ALTER TABLE orders ADD COLUMN `payment_method` VARCHAR(100); -- payment method is the way to pay for the order
+-- delete orders -> soft delete
+ALTER TABLE orders ADD COLUMN `active` TINYINT(1); -- 1: active, 0: inactive
+-- order status can only be one of the following values: pending, processing, shipped, delivered, canceled
+ALTER TABLE orders MODIFY COLUMN `status` enum('pending', 'processing', 'shipped', 'delivered', 'canceled') DEFAULT 'pending' COMMENT 'status of the order';
+
+-- Create order details table
+CREATE TABLE order_details(
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    order_id INT,
+    FOREIGN KEY (order_id) REFERENCES orders(id),
+    product_id INT,
+    FOREIGN KEY (product_id) REFERENCES products(id),
+    price FLOAT CHECK(price >= 0),
+    number_of_products INT CHECK(number_of_products > 0),
+    total_money FLOAT CHECK(total_money >= 0),
+    color VARCHAR(20) DEFAULT '' COMMENT 'color of the product',
 );
