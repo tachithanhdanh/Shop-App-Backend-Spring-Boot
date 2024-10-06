@@ -7,7 +7,7 @@ USE shopapp;
 -- column names are written in lowercase, snake_case
 CREATE TABLE users (
     id INT AUTO_INCREMENT PRIMARY KEY, -- Unique identifier, auto increment when new user is created
-    fullname VARCHAR(100) DEFAULT '', -- Full name of the user, default is empty string
+    full_name VARCHAR(100) DEFAULT '', -- Full name of the user, default is empty string
     phone_number VARCHAR(10) NOT NULL, -- Phone number of the user, cannot be empty
     `address` VARCHAR(200) DEFAULT '', -- Address of the user, default is empty string
     `password` VARCHAR(255) NOT NULL DEFAULT '', -- Password of the user, cannot be empty, hashed by SHA-256
@@ -90,7 +90,7 @@ CREATE TABLE orders(
     id INT PRIMARY KEY AUTO_INCREMENT,
     user_id INT, -- foreign key
     FOREIGN KEY (user_id) REFERENCES users(id), -- reference to users table
-    fullname VARCHAR(100) DEFAULT '' COMMENT 'full name of the customer', -- can be different from the user's full name
+    full_name VARCHAR(100) DEFAULT '' COMMENT 'full name of the customer', -- can be different from the user's full name
     email VARCHAR(100) DEFAULT '' COMMENT 'email of the customer', -- can be empty
     phone_number VARCHAR(10) NOT NULL, -- phone number of the customer, cannot be empty
     `address` VARCHAR(200) NOT NULL, -- address of the customer, cannot be empty

@@ -37,12 +37,12 @@ public class CategoryController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<String> updateCategory(@PathVariable Long id) {
+    public ResponseEntity<String> updateCategory(@Valid @PathVariable Long id) {
         return ResponseEntity.ok("Category updated");
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<String> deleteCategory(@PathVariable Long id) {
+    public ResponseEntity<String> deleteCategory(@Valid @PathVariable Long id) {
         return ResponseEntity.ok("Category deleted");
     }
 }
