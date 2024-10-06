@@ -26,7 +26,7 @@ public class OrderDTO {
 
     @JsonProperty("phone_number")
     @NotBlank(message = "Phone number is required")
-    @Size(min = 5, max = 15, message = "Phone number must be between 5 and 15 characters")
+    @Size(min = 5, max = 10, message = "Phone number must be between 5 and 10 characters")
     private String phoneNumber;
 
     private String address;
