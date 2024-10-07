@@ -8,7 +8,7 @@ USE shopapp;
 CREATE TABLE users (
     id INT AUTO_INCREMENT PRIMARY KEY, -- Unique identifier, auto increment when new user is created
     full_name VARCHAR(100) DEFAULT '', -- Full name of the user, default is empty string
-    phone_number VARCHAR(10) NOT NULL, -- Phone number of the user, cannot be empty
+    phone_number VARCHAR(20) NOT NULL, -- Phone number of the user, cannot be empty
     `address` VARCHAR(200) DEFAULT '', -- Address of the user, default is empty string
     `password` VARCHAR(255) NOT NULL DEFAULT '', -- Password of the user, cannot be empty, hashed by SHA-256
     created_at DATETIME,
@@ -92,7 +92,7 @@ CREATE TABLE orders(
     FOREIGN KEY (user_id) REFERENCES users(id), -- reference to users table
     full_name VARCHAR(100) DEFAULT '' COMMENT 'full name of the customer', -- can be different from the user's full name
     email VARCHAR(100) DEFAULT '' COMMENT 'email of the customer', -- can be empty
-    phone_number VARCHAR(10) NOT NULL, -- phone number of the customer, cannot be empty
+    phone_number VARCHAR(20) NOT NULL, -- phone number of the customer, cannot be empty
     `address` VARCHAR(200) NOT NULL, -- address of the customer, cannot be empty
     note VARCHAR(100) DEFAULT '' COMMENT 'note for the order', -- can be empty
     order_date DATETIME COMMENT 'date when the order is created' DEFAULT CURRENT_TIMESTAMP,
@@ -105,6 +105,9 @@ ALTER TABLE orders ADD COLUMN `shipping_address` VARCHAR(200); -- shipping addre
 ALTER TABLE orders ADD COLUMN `shipping_date` DATE;
 ALTER TABLE orders ADD COLUMN `tracking_number` VARCHAR(100); -- tracking number is used to track the order
 ALTER TABLE orders ADD COLUMN `payment_method` VARCHAR(100); -- payment method is the way to pay for the order
+ALTER TABLE orders ADD COLUMN `payment_status` VARCHAR(20); -- payment status is the status of the payment
+ALTER TABLE orders ADD COLUMN `payment_date` DATE; -- Payment date is the date when the payment is made
+
 -- delete orders -> soft delete
 ALTER TABLE orders ADD COLUMN `active` TINYINT(1); -- 1: active, 0: inactive
 -- order status can only be one of the following values: pending, processing, shipped, delivered, canceled
