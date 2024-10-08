@@ -7,6 +7,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -15,6 +16,7 @@ import lombok.NoArgsConstructor;
 @Data // Lombok's annotation to generate getters and setters, toString, and other boilerplate code
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class Category {
     @Id // Primary key
     @GeneratedValue(strategy = GenerationType.IDENTITY) // Auto-generate ID, auto increment
