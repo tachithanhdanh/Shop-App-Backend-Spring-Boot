@@ -1,6 +1,9 @@
 package com.example.shopapp.controllers;
 
 import com.example.shopapp.dtos.ProductDTO;
+import com.example.shopapp.dtos.ProductImageDTO;
+import com.example.shopapp.models.Product;
+import com.example.shopapp.services.ProductService;
 import jakarta.validation.Valid;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -9,8 +12,11 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.StringUtils;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -25,7 +31,10 @@ import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("${api.prefix}/products")
+@RequiredArgsConstructor
 public class ProductControllers {
+
+    private final ProductService productService;
 
     @PostMapping("") // http://localhost:8088/api/v1/products
     public ResponseEntity<?> createProduct(
@@ -38,6 +47,8 @@ public class ProductControllers {
                         .map(FieldError::getDefaultMessage).toList();
                 return ResponseEntity.badRequest().body(errorMessages);
             }
+            Product newProduct = productService.createProduct(
+                    productDTO); // Save the product to the database
             List<MultipartFile> files = productDTO.getFiles();
             files = files == null ? new ArrayList<>(0) : files;
             for (MultipartFile file : files) {
@@ -62,6 +73,11 @@ public class ProductControllers {
 
                 // Save the file to the server
                 // The file is saved in product_images table
+                productService.createProductImage(newProduct.getId(),
+                        ProductImageDTO.builder()
+                                .imageUrl(fileName)
+                                .build()
+                );
             }
             // Save the product to the database
             return ResponseEntity.status(HttpStatus.CREATED).body("Product created: " + productDTO);
@@ -72,7 +88,8 @@ public class ProductControllers {
 
     private String storeFile(MultipartFile file) throws IOException {
         // get original filename
-        String filename = file.getOriginalFilename();
+        // cleanPath is used to prevent directory traversal attacks
+        String filename = StringUtils.cleanPath(Objects.requireNonNull(file.getOriginalFilename()));
 
         // Insert UUID to the filename to ensure that the filename is unique
         String uniqueFilename = java.util.UUID.randomUUID().toString() + "_" + filename;
