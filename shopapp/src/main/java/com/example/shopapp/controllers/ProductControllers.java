@@ -3,6 +3,7 @@ package com.example.shopapp.controllers;
 import com.example.shopapp.dtos.ProductDTO;
 import com.example.shopapp.dtos.ProductImageDTO;
 import com.example.shopapp.models.Product;
+import com.example.shopapp.models.ProductImage;
 import com.example.shopapp.services.ProductService;
 import jakarta.validation.Valid;
 import java.io.IOException;
@@ -15,6 +16,7 @@ import java.util.List;
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.StringUtils;
 import org.springframework.validation.BindingResult;
@@ -24,8 +26,10 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -38,7 +42,7 @@ public class ProductControllers {
 
     @PostMapping("") // http://localhost:8088/api/v1/products
     public ResponseEntity<?> createProduct(
-            @Valid @ModelAttribute ProductDTO productDTO,
+            @Valid @RequestBody ProductDTO productDTO,
             BindingResult bindingResult
     ) {
         try {
@@ -49,8 +53,28 @@ public class ProductControllers {
             }
             Product newProduct = productService.createProduct(
                     productDTO); // Save the product to the database
-            List<MultipartFile> files = productDTO.getFiles();
+
+            // Save the product to the database
+            return ResponseEntity.status(HttpStatus.CREATED).body(newProduct);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }
+    }
+
+    @PostMapping(value = "/uploads/{product_id}")
+    // http://localhost:8088/api/v1/products/upload
+    public ResponseEntity<?> uploadImages(
+            @PathVariable("product_id") Long productId,
+            @RequestPart("files") List<MultipartFile> files
+            // https://blogs.perficient.com/2020/07/27/requestbody-and-multipart-on-spring-boot/
+    ) {
+        try {
+            Product existingProduct = productService.getProductById(productId);
             files = files == null ? new ArrayList<>(0) : files;
+            if (files.size() > ProductImage.MAXIMUM_IMAGES_PER_PRODUCT) {
+                return ResponseEntity.badRequest().body("You can only upload a maximum of 5 images");
+            }
+            List<ProductImage> productImages = new ArrayList<>();
             for (MultipartFile file : files) {
                 if (file.getSize() == 0) {
                     // skip empty files
@@ -73,20 +97,25 @@ public class ProductControllers {
 
                 // Save the file to the server
                 // The file is saved in product_images table
-                productService.createProductImage(newProduct.getId(),
+                ProductImage productImage = productService.createProductImage(existingProduct.getId(),
                         ProductImageDTO.builder()
                                 .imageUrl(fileName)
                                 .build()
                 );
+                productImages.add(productImage);
+
             }
-            // Save the product to the database
-            return ResponseEntity.status(HttpStatus.CREATED).body("Product created: " + productDTO);
+            return ResponseEntity.ok().body(productImages);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
     }
 
     private String storeFile(MultipartFile file) throws IOException {
+        if (!isImage(file) || file.getOriginalFilename() == null) {
+            throw new IOException("Invalid file format");
+        }
+
         // get original filename
         // cleanPath is used to prevent directory traversal attacks
         String filename = StringUtils.cleanPath(Objects.requireNonNull(file.getOriginalFilename()));
@@ -109,6 +138,11 @@ public class ProductControllers {
         Files.copy(file.getInputStream(), destionationPath, StandardCopyOption.REPLACE_EXISTING);
 
         return uniqueFilename;
+    }
+
+    private boolean isImage(MultipartFile file) {
+        String contentType = file.getContentType();
+        return contentType != null && contentType.startsWith("image/");
     }
 
     @GetMapping("") // http://localhost:8088/api/v1/products?page=1&limit=10

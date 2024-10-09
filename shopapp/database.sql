@@ -63,9 +63,9 @@ CREATE TABLE categories(
 -- Products table
 CREATE TABLE products(
     id INT PRIMARY KEY AUTO_INCREMENT,
-    `name` VARCHAR(350) NOT NULL DEFAULT '' COMMENT 'name of the product',
+    `name` VARCHAR(350) DEFAULT '' COMMENT 'name of the product',
     price FLOAT NOT NULL COMMENT 'price of the product' CHECK (price >= 0), -- price cannot be negative
-    thumbnail VARCHAR(300) NOT NULL DEFAULT '' COMMENT 'thumbnail url of the product',
+    thumbnail VARCHAR(300) DEFAULT '' COMMENT 'thumbnail url of the product',
     `description` LONGTEXT DEFAULT '' COMMENT 'description of the product',
     created_at DATETIME,
     updated_at DATETIME,

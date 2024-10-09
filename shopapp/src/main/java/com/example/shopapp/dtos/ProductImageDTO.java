@@ -20,5 +20,5 @@ public class ProductImageDTO {
 
     @JsonProperty("product_id")
     @Min(value = 1, message = "Product ID must be greater than 0")
-    private Product product;
+    private Long productId;
 }

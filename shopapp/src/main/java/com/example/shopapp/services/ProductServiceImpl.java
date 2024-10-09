@@ -10,7 +10,6 @@ import com.example.shopapp.models.ProductImage;
 import com.example.shopapp.repositories.CategoryRepository;
 import com.example.shopapp.repositories.ProductImageRepository;
 import com.example.shopapp.repositories.ProductRepository;
-import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -105,8 +104,9 @@ public class ProductServiceImpl implements ProductService {
         // maximum number of images per product is 5
         int numberOfProductImages = productImageRepository.findByProductId(
                 existingProduct.getId()).size();
-        if (numberOfProductImages>= 5) {
-            throw new InvalidParamException("Number of images exceeded the limit of 5");
+        if (numberOfProductImages >= ProductImage.MAXIMUM_IMAGES_PER_PRODUCT) {
+            throw new InvalidParamException("Number of images exceeded the limit of "
+                    + ProductImage.MAXIMUM_IMAGES_PER_PRODUCT);
         }
         return productImageRepository.save(productImage);
     }
