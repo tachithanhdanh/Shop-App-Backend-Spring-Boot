@@ -4,6 +4,8 @@ import com.example.shopapp.dtos.ProductDTO;
 import com.example.shopapp.dtos.ProductImageDTO;
 import com.example.shopapp.models.Product;
 import com.example.shopapp.models.ProductImage;
+import com.example.shopapp.responses.ProductListResponse;
+import com.example.shopapp.responses.ProductResponse;
 import com.example.shopapp.services.ProductService;
 import jakarta.validation.Valid;
 import java.io.IOException;
@@ -15,15 +17,16 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.StringUtils;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -72,7 +75,8 @@ public class ProductControllers {
             Product existingProduct = productService.getProductById(productId);
             files = files == null ? new ArrayList<>(0) : files;
             if (files.size() > ProductImage.MAXIMUM_IMAGES_PER_PRODUCT) {
-                return ResponseEntity.badRequest().body("You can only upload a maximum of 5 images");
+                return ResponseEntity.badRequest()
+                        .body("You can only upload a maximum of 5 images");
             }
             List<ProductImage> productImages = new ArrayList<>();
             for (MultipartFile file : files) {
@@ -97,7 +101,8 @@ public class ProductControllers {
 
                 // Save the file to the server
                 // The file is saved in product_images table
-                ProductImage productImage = productService.createProductImage(existingProduct.getId(),
+                ProductImage productImage = productService.createProductImage(
+                        existingProduct.getId(),
                         ProductImageDTO.builder()
                                 .imageUrl(fileName)
                                 .build()
@@ -146,10 +151,25 @@ public class ProductControllers {
     }
 
     @GetMapping("") // http://localhost:8088/api/v1/products?page=1&limit=10
-    public ResponseEntity<String> getProducts(@RequestParam("page") int page,
-            @RequestParam("limit") int limit) {
+    public ResponseEntity<ProductListResponse> getProducts(
+            @RequestParam("page") int page,
+            @RequestParam("limit") int limit
+    ) {
+        // Create Pageable from page and limit
+        // page is zero-based
+        PageRequest pageRequest = PageRequest.of(page, limit, Sort.by("createdAt").descending());
+        Page<ProductResponse> productResponsePage = productService.getAllProducts(pageRequest);
+        // get total pages
+        int totalPages = productResponsePage.getTotalPages();
+        // get list of products
+        List<ProductResponse> productResponses = productResponsePage.getContent();
         return ResponseEntity.ok(
-                String.format("get all products with page %d and limit %d", page, limit));
+                ProductListResponse
+                        .builder()
+                        .products(productResponses)
+                        .totalPages(totalPages)
+                        .build()
+        );
     }
 
     @GetMapping("/{id}") // http://localhost:8088/api/v1/products/1

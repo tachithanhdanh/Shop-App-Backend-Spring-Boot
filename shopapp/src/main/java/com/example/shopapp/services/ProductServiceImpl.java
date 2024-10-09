@@ -10,6 +10,7 @@ import com.example.shopapp.models.ProductImage;
 import com.example.shopapp.repositories.CategoryRepository;
 import com.example.shopapp.repositories.ProductImageRepository;
 import com.example.shopapp.repositories.ProductRepository;
+import com.example.shopapp.responses.ProductResponse;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -49,11 +50,24 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
-    public Page<Product> getAllProducts(PageRequest pageRequest) {
+    public Page<ProductResponse> getAllProducts(PageRequest pageRequest) {
         // get products according to page and limit
         // page is the page number, limit is the number of products per page
         // The implementation of how pageRequest is handled will be done in the controller
-        return productRepository.findAll(pageRequest);
+        return productRepository.findAll(pageRequest)
+                .map(product -> {
+                            ProductResponse productResponse = ProductResponse.builder()
+                                    .name(product.getName())
+                                    .price(product.getPrice())
+                                    .thumbnail(product.getThumbnail())
+                                    .description(product.getDescription())
+                                    .categoryId(product.getCategory().getId())
+                                    .build();
+                            productResponse.setCreatedAt(product.getCreatedAt());
+                            productResponse.setUpdatedAt(product.getUpdatedAt());
+                            return productResponse;
+                        }
+                );
     }
 
     @Override
