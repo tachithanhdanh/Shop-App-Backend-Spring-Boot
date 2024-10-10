@@ -2,11 +2,13 @@ package com.example.shopapp.controllers;
 
 import com.example.shopapp.dtos.ProductDTO;
 import com.example.shopapp.dtos.ProductImageDTO;
+import com.example.shopapp.exceptions.DataNotFoundException;
 import com.example.shopapp.models.Product;
 import com.example.shopapp.models.ProductImage;
 import com.example.shopapp.responses.ProductListResponse;
 import com.example.shopapp.responses.ProductResponse;
 import com.example.shopapp.services.ProductService;
+import com.github.javafaker.Faker;
 import jakarta.validation.Valid;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -29,6 +31,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -173,13 +176,57 @@ public class ProductControllers {
     }
 
     @GetMapping("/{id}") // http://localhost:8088/api/v1/products/1
-    public ResponseEntity<String> getProductById(@PathVariable("id") int productId) {
-        return ResponseEntity.ok(String.format("get product with id %d", productId));
+    public ResponseEntity<?> getProductById(@PathVariable("id") Long productId) {
+        try {
+            Product existingProduct = productService.getProductById(productId);
+            return ResponseEntity.ok(ProductResponse.fromProduct(existingProduct));
+        } catch (DataNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        }
+    }
+
+    @PutMapping("/{id}") // http://localhost:8088/api/v1/products/1
+    public ResponseEntity<?> updateProduct(
+            @PathVariable("id") Long productId,
+            @Valid @RequestBody ProductDTO productDTO,
+            BindingResult bindingResult
+    ) {
+        try {
+            if (bindingResult.hasErrors()) {
+                List<String> errorMessages = bindingResult.getFieldErrors().stream()
+                        .map(FieldError::getDefaultMessage).toList();
+                return ResponseEntity.badRequest().body(errorMessages);
+            }
+            Product updatedProduct = productService.updateProduct(productId, productDTO);
+            return ResponseEntity.ok("Product with id " + productId + " has been updated successfully");
+        } catch (DataNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        }
     }
 
     @DeleteMapping("/{id}") // http://localhost:8088/api/v1/products/1
     public ResponseEntity<String> deleteProduct(@PathVariable("id") int productId) {
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(String.format("delete product with id %d", productId));
+        productService.deleteProduct((long) productId);
+        return ResponseEntity.ok("Product with id " + productId + " has been deleted successfully");
+    }
+
+//    @PostMapping("/generateFakeProducts")
+    private ResponseEntity<String> generateFakeProducts() {
+        try {
+            Faker faker = new Faker();
+            for (int i = 0; i < 1_000_000; ++i) {
+                ProductDTO productDTO = ProductDTO.builder()
+                        .name(faker.commerce().productName())
+                        .price((float) faker.number().numberBetween(10, 90_000_000))
+                        .thumbnail("")
+                        .description(faker.lorem().sentence())
+                        .categoryId((long) faker.number().numberBetween(2, 5))
+                        .build();
+                productService.createProduct(productDTO);
+            }
+        } catch (DataNotFoundException exception) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(exception.getMessage());
+        }
+        return ResponseEntity.ok("Fake products generated");
     }
 }

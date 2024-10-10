@@ -40,7 +40,7 @@ public class CategoryController {
             return ResponseEntity.badRequest().body(errorMessages);
         }
         categoryService.createCategory(categoryDTO);
-        return ResponseEntity.ok("Category created: " + categoryDTO.toString());
+        return ResponseEntity.ok("Insert category successfully");
     }
 
     // http://localhost:8088/api/v1/categories?page=1&limit=10

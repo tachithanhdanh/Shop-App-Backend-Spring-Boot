@@ -51,5 +51,6 @@ public class Product extends BaseEntity {
     private Category category;
 
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    // cascade = CascadeType.ALL means that if a product is deleted, all its images will be deleted
     private List<ProductImage> productImages;
 }
