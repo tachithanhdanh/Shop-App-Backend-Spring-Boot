@@ -12,8 +12,10 @@ import java.sql.Date;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
+@EqualsAndHashCode(callSuper = true)
 @Entity
 @Table(name = "users")
 @Data
@@ -50,6 +52,9 @@ public class User extends BaseEntity {
     @Column(name = "google_account_id", length = 100)
     private String googleAccountId;
 
+    // The roles in the database cannot be null
+    // otherwise, Hibernate cannot retrieve the user by ID
+    // https://stackoverflow.com/questions/57795044/spring-data-jpa-mysql-findbyid-empty-unless-findall-called-before
     @ManyToOne
     @JoinColumn(name = "role_id", referencedColumnName = "id", nullable = false)
     private Role role;
