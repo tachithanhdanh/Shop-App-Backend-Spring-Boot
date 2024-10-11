@@ -61,10 +61,11 @@ public class OrderServiceImpl implements OrderService {
     public OrderResponse updateOrder(Long id, OrderDTO orderDTO) throws DataNotFoundException {
         // Check if order exists, if not, throw an exception
         Order existingOrder = orderRepository.findById(id)
-                .orElseThrow(() -> new DataNotFoundException("Order not found"));
+                .orElseThrow(() -> new DataNotFoundException("Cannot find order with id: " + id));
         // Check if user exists, if not, throw an exception
         User existingUser = userRepository.findById(orderDTO.getUserId())
-                .orElseThrow(() -> new DataNotFoundException("User not found"));
+                .orElseThrow(() -> new DataNotFoundException(
+                        "Cannot find user with id: " + orderDTO.getUserId()));
         // Create a mapping between OrderDTO and Order
         // Do not skip user
         // skip id, orderDate, createdAt, updatedAt
