@@ -7,8 +7,8 @@ import java.util.List;
 
 public interface OrderService {
     OrderResponse createOrder(OrderDTO orderDTO) throws DataNotFoundException;
-    OrderResponse getOrderById(Long id);
-    OrderResponse updateOrder(Long id, OrderDTO orderDTO);
+    OrderResponse getOrderById(Long id) throws DataNotFoundException;
+    OrderResponse updateOrder(Long id, OrderDTO orderDTO) throws DataNotFoundException;
     void deleteOrder(Long id);
-    List<OrderResponse> getAllOrders(Long userId);
+    List<OrderResponse> findByUserId(Long userId);
 }

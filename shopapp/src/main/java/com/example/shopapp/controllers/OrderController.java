@@ -41,14 +41,28 @@ public class OrderController {
         }
     }
 
-    @GetMapping("/{user_id}") // Get orders by user ID
+    @GetMapping("/user/{user_id}") // Get orders by user ID
     // GET http://localhost:8088/api/v1/orders/1
     public ResponseEntity<?> getOrdersByUserId(@Valid @PathVariable("user_id") Long userId) {
         try {
             // Get orders by user ID
-            return ResponseEntity.ok("Orders by user ID: " + userId);
+            List<OrderResponse> orderResponses = orderService.findByUserId(userId);
+            return ResponseEntity.ok(orderResponses);
         } catch (Exception e) {
             // Exception occurs when getting order because of invalid user ID
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @GetMapping("/{order_id}") // Get order by order ID
+    // GET http://localhost:8088/api/v1/orders/1
+    public ResponseEntity<?> getOrderById(@Valid @PathVariable("order_id") Long orderId) {
+        try {
+            // Get order by order ID
+            OrderResponse orderResponse = orderService.getOrderById(orderId);
+            return ResponseEntity.ok(orderResponse);
+        } catch (Exception e) {
+            // Exception occurs when getting order because of invalid order ID
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
@@ -67,7 +81,9 @@ public class OrderController {
                         .map(FieldError::getDefaultMessage).toList();
                 return ResponseEntity.badRequest().body(errorMessages);
             }
-            return ResponseEntity.ok("Order updated successfully: " + orderDTO.toString());
+            // Update order by order ID
+            OrderResponse orderResponse = orderService.updateOrder(orderId, orderDTO);
+            return ResponseEntity.ok(orderResponse);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
@@ -77,6 +93,7 @@ public class OrderController {
     // DELETE http://localhost:8088/api/v1/orders/1
     public ResponseEntity<?> deleteOrder(@Valid @PathVariable("order_id") Long orderId) {
         // soft delete order by order ID (set active = false)
+        orderService.deleteOrder(orderId);
         return ResponseEntity.ok("Order deleted successfully: " + orderId);
     }
 }

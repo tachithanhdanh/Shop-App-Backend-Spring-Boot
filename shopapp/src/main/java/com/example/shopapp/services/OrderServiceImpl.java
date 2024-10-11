@@ -51,22 +51,50 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
-    public OrderResponse getOrderById(Long id) {
-        return null;
+    public OrderResponse getOrderById(Long id) throws DataNotFoundException {
+        Order order = orderRepository.findById(id)
+                .orElseThrow(() -> new DataNotFoundException("Order not found"));
+        return modelMapper.map(order, OrderResponse.class);
     }
 
     @Override
-    public OrderResponse updateOrder(Long id, OrderDTO orderDTO) {
-        return null;
+    public OrderResponse updateOrder(Long id, OrderDTO orderDTO) throws DataNotFoundException {
+        // Check if order exists, if not, throw an exception
+        Order existingOrder = orderRepository.findById(id)
+                .orElseThrow(() -> new DataNotFoundException("Order not found"));
+        // Check if user exists, if not, throw an exception
+        User existingUser = userRepository.findById(orderDTO.getUserId())
+                .orElseThrow(() -> new DataNotFoundException("User not found"));
+        // Create a mapping between OrderDTO and Order
+        // Do not skip user
+        // skip id, orderDate, createdAt, updatedAt
+        modelMapper.typeMap(OrderDTO.class, Order.class).addMappings(modelMapper -> {
+            modelMapper.skip(Order::setId);
+            modelMapper.skip(Order::setOrderDate);
+            modelMapper.skip(Order::setCreatedAt);
+            modelMapper.skip(Order::setUpdatedAt);
+        });
+        // Update existing order with new information
+        modelMapper.map(orderDTO, existingOrder);
+        existingOrder.setUser(existingUser);
+        return modelMapper.map(orderRepository.save(existingOrder), OrderResponse.class);
     }
 
     @Override
     public void deleteOrder(Long id) {
-
+        // no hard delete, just set active to false
+        Order order = orderRepository.findById(id)
+                .orElse(null);
+        if (order != null) {
+            order.setActive(false);
+            orderRepository.save(order);
+        }
     }
 
     @Override
-    public List<OrderResponse> getAllOrders(Long userId) {
-        return null;
+    public List<OrderResponse> findByUserId(Long userId) {
+        List<Order> orders = orderRepository.findByUserId(userId);
+        return orders.stream().map(order -> modelMapper.map(order, OrderResponse.class))
+                .toList();
     }
 }
