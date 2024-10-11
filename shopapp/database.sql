@@ -107,6 +107,8 @@ ALTER TABLE orders ADD COLUMN `tracking_number` VARCHAR(100); -- tracking number
 ALTER TABLE orders ADD COLUMN `payment_method` VARCHAR(100); -- payment method is the way to pay for the order
 ALTER TABLE orders ADD COLUMN `payment_status` VARCHAR(20); -- payment status is the status of the payment
 ALTER TABLE orders ADD COLUMN `payment_date` DATE; -- Payment date is the date when the payment is made
+ALTER TABLE orders ADD COLUMN `created_at` DATETIME DEFAULT NOW(); -- created_at is the date when the order is created
+ALTER TABLE orders ADD COLUMN `updated_at` DATETIME DEFAULT NOW(); -- updated_at is the date when the order is updated
 
 -- delete orders -> soft delete
 ALTER TABLE orders ADD COLUMN `active` TINYINT(1); -- 1: active, 0: inactive
