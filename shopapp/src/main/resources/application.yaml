@@ -23,3 +23,6 @@ server:
   port: 8088
 api:
   prefix: /api/v1
+jwt:
+  expiration: 86400000 # 1 day = 1 * 24 * 60 * 60 * 1000
+  secret: e79ad20b683edd8326283367a880d7ee5b92ceaae74b8ad393f9df8436a5472930a1ae4c05ed8522437d794cc1507e1e71b4c715dde10430c13415d828dce97f

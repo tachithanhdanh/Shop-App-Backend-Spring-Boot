@@ -1,13 +1,19 @@
 package com.example.shopapp.services;
 
+import com.example.shopapp.components.JwtUtils;
 import com.example.shopapp.dtos.UserDTO;
 import com.example.shopapp.exceptions.DataNotFoundException;
 import com.example.shopapp.models.Role;
 import com.example.shopapp.models.User;
 import com.example.shopapp.repositories.RoleRepository;
 import com.example.shopapp.repositories.UserRepository;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -16,9 +22,13 @@ public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final JwtUtils jwtUtils;
+    private final AuthenticationManager authenticationManager;
 
     @Override
     public User createUser(UserDTO userDTO) throws DataNotFoundException {
+        // register user
         // create a new user and return it
         String phoneNumber = userDTO.getPhoneNumber();
 
@@ -40,9 +50,8 @@ public class UserServiceImpl implements UserService {
         newUser.setRole(role);
         if (userDTO.getFacebookAccountId().isEmpty() && userDTO.getGoogleAccountId().isEmpty()) {
             String password = userDTO.getPassword();
-//            will use later when we have password encoder and configured Spring Security
-//            String encodedPassword = passwordEncoder.encode(password);
-//            newUser.setPassword(userDTO.getPassword());
+            String encodedPassword = passwordEncoder.encode(password);
+            newUser.setPassword(userDTO.getPassword());
         } else {
             newUser.setPassword("");
         }
@@ -50,9 +59,23 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public String loginUser(String phoneNumber, String password) {
-        // return the token if the user is authenticated
-        // will be implemented once we have learned Spring Security
-        return null;
+    public String loginUser(String phoneNumber, String password) throws DataNotFoundException {
+        Optional<User> optionalUser = userRepository.findByPhoneNumber(phoneNumber);
+        if (optionalUser.isEmpty()) {
+            throw new BadCredentialsException("Invalid phone number or password");
+        }
+        User existingUser = optionalUser.get();
+        // check if the user has a password
+        // only check if user signs in with phone number and password
+        // not check if user signs in with Facebook or Google
+        if (existingUser.getFacebookAccountId() == null && existingUser.getGoogleAccountId() == null
+                && !passwordEncoder.matches(password, existingUser.getPassword())) {
+            throw new BadCredentialsException("Invalid phone number or password");
+        }
+        // authenticate user with Java Spring Security
+        var authenticationToken = new UsernamePasswordAuthenticationToken(phoneNumber, password);
+        authenticationManager.authenticate(authenticationToken);
+        // return the generated token
+        return jwtUtils.generateToken(existingUser);
     }
 }
