@@ -3,6 +3,7 @@ package com.example.shopapp.services;
 import com.example.shopapp.components.JwtUtils;
 import com.example.shopapp.dtos.UserDTO;
 import com.example.shopapp.exceptions.DataNotFoundException;
+import com.example.shopapp.exceptions.InvalidParamException;
 import com.example.shopapp.models.Role;
 import com.example.shopapp.models.User;
 import com.example.shopapp.repositories.RoleRepository;
@@ -48,10 +49,12 @@ public class UserServiceImpl implements UserService {
         Role role = roleRepository.findById(userDTO.getRoleId())
                 .orElseThrow(() -> new DataNotFoundException("Role not found"));
         newUser.setRole(role);
-        if (userDTO.getFacebookAccountId().isEmpty() && userDTO.getGoogleAccountId().isEmpty()) {
+        if ((userDTO.getFacebookAccountId() == null || userDTO.getFacebookAccountId().isEmpty())
+                && (userDTO.getGoogleAccountId() == null || userDTO.getGoogleAccountId()
+                .isEmpty())) {
             String password = userDTO.getPassword();
             String encodedPassword = passwordEncoder.encode(password);
-            newUser.setPassword(userDTO.getPassword());
+            newUser.setPassword(encodedPassword);
         } else {
             newUser.setPassword("");
         }
@@ -59,7 +62,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public String loginUser(String phoneNumber, String password) throws DataNotFoundException {
+    public String loginUser(String phoneNumber, String password) throws InvalidParamException {
         Optional<User> optionalUser = userRepository.findByPhoneNumber(phoneNumber);
         if (optionalUser.isEmpty()) {
             throw new BadCredentialsException("Invalid phone number or password");
@@ -68,12 +71,17 @@ public class UserServiceImpl implements UserService {
         // check if the user has a password
         // only check if user signs in with phone number and password
         // not check if user signs in with Facebook or Google
-        if (existingUser.getFacebookAccountId() == null && existingUser.getGoogleAccountId() == null
+        if ((existingUser.getFacebookAccountId() == null || existingUser.getFacebookAccountId()
+                .isEmpty())
+                && (existingUser.getGoogleAccountId() == null || existingUser.getGoogleAccountId()
+                .isEmpty())
                 && !passwordEncoder.matches(password, existingUser.getPassword())) {
             throw new BadCredentialsException("Invalid phone number or password");
         }
         // authenticate user with Java Spring Security
-        var authenticationToken = new UsernamePasswordAuthenticationToken(phoneNumber, password);
+        var authenticationToken = new UsernamePasswordAuthenticationToken(
+                phoneNumber, password,
+                existingUser.getAuthorities());
         authenticationManager.authenticate(authenticationToken);
         // return the generated token
         return jwtUtils.generateToken(existingUser);

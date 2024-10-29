@@ -1,5 +1,6 @@
 package com.example.shopapp.components;
 
+import com.example.shopapp.exceptions.InvalidParamException;
 import com.example.shopapp.models.User;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
@@ -8,6 +9,7 @@ import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import io.jsonwebtoken.security.SecureDigestAlgorithm;
+import java.security.InvalidParameterException;
 import java.security.Key;
 import java.util.Date;
 import java.util.HashMap;
@@ -15,6 +17,7 @@ import java.util.Map;
 import javax.crypto.SecretKey;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 import java.util.function.Function;
 
@@ -28,7 +31,7 @@ public class JwtUtils {
     @Value("${jwt.secret}")
     private String secretKey;
 
-    public String generateToken(User user) {
+    public String generateToken(User user) throws InvalidParamException {
         // The properties of the user that will be included in the token are called claims
         Map<String, Object> claims = new HashMap<>();
         claims.put("phoneNumber", user.getPhoneNumber());
@@ -46,8 +49,9 @@ public class JwtUtils {
         } catch (Exception e) {
             // Instead of printing the error message, you should log it
             // Will add logger later
-            System.err.println("Cannot generate token, error: " + e.getMessage());
-            return null;
+//            System.err.println("Cannot generate token, error: " + e.getMessage());
+            throw new InvalidParamException("Cannot generate jwt token, error: " + e.getMessage());
+//            return null;
         }
     }
 
@@ -81,5 +85,22 @@ public class JwtUtils {
         // return the result of the check
         Date expirationDate = (Date) this.extractClaim(token, Claims::getExpiration);
         return expirationDate.before(new Date());
+    }
+
+    public String extractPhoneNumber(String token) {
+        // extract the phone number from the token
+        // return the extracted phone number
+        return extractClaim(token, Claims::getSubject);
+    }
+
+    public boolean validateToken(String token, UserDetails userDetails) {
+        // extract the phone number from the token
+        // extract the expiration date from the token
+        // extract the phone number from the user details
+        // check if the phone number from the token is the same as the phone number from the user details
+        // check if the token is expired
+        // return the result of the checks
+        String phoneNumber = extractPhoneNumber(token);
+        return (phoneNumber.equals(userDetails.getUsername()) && !isTokenExpired(token));
     }
 }
