@@ -7,6 +7,7 @@ import static org.springframework.http.HttpMethod.PUT;
 
 import com.example.shopapp.components.JwtAuthenticationEntryPoint;
 import com.example.shopapp.filters.JwtTokenFilter;
+import com.example.shopapp.models.Role;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -23,11 +24,9 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class WebSecurityConfig {
 
     private final JwtTokenFilter jwtTokenFilter;
-
+    private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
     @Value("${api.prefix}")
     private String apiPrefix;
-
-    private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -50,19 +49,71 @@ public class WebSecurityConfig {
                                     String.format("%s/users/login", apiPrefix)
                             ).permitAll()
 
+                            .requestMatchers(GET, // user and admin can get categories
+                                    String.format("%s/categories**", apiPrefix))
+                            .hasAnyRole(Role.USER, Role.ADMIN)
+
+                            .requestMatchers(POST, // only admin can create a category
+                                    String.format("%s/categories/**", apiPrefix))
+                            .hasRole(Role.ADMIN)
+
+                            .requestMatchers(PUT, // only admin can update a category
+                                    String.format("%s/categories/**", apiPrefix))
+                            .hasRole(Role.ADMIN)
+
+                            .requestMatchers(DELETE, // only admin can delete a category
+                                    String.format("%s/categories/**", apiPrefix))
+                            .hasRole(Role.ADMIN)
+
+                            .requestMatchers(GET, // user and admin can get products
+                                    String.format("%s/products**", apiPrefix))
+                            .hasAnyRole(Role.USER, Role.ADMIN)
+
+                            .requestMatchers(GET, // user and admin can get a product by ID
+                                    String.format("%s/products/**", apiPrefix))
+                            .hasAnyRole(Role.USER, Role.ADMIN)
+
+                            .requestMatchers(POST, // only admin can create a product
+                                    String.format("%s/products/**", apiPrefix))
+                            .hasRole(Role.ADMIN)
+
+                            .requestMatchers(PUT, // only admin can update a product
+                                    String.format("%s/products/**", apiPrefix))
+                            .hasRole(Role.ADMIN)
+
+                            .requestMatchers(DELETE, // only admin can delete a product
+                                    String.format("%s/products/**", apiPrefix))
+                            .hasRole(Role.ADMIN)
+
                             .requestMatchers(GET, // user can get orders by user ID
                                     String.format("%s/orders/**", apiPrefix))
-                            .hasAnyRole("USER", "ADMIN")
+                            .hasAnyRole(Role.USER, Role.ADMIN)
 
                             .requestMatchers(POST, // user can create an order
                                     String.format("%s/orders/**", apiPrefix))
-                            .hasRole("USER")
+                            .hasRole(Role.USER)
 
                             .requestMatchers(PUT, // only admin can update an order
-                                    String.format("%s/orders/**", apiPrefix)).hasRole("ADMIN")
+                                    String.format("%s/orders/**", apiPrefix)).hasRole(Role.ADMIN)
 
                             .requestMatchers(DELETE, // only admin can delete an order
-                                    String.format("%s/orders/**", apiPrefix)).hasRole("ADMIN")
+                                    String.format("%s/orders/**", apiPrefix)).hasRole(Role.ADMIN)
+
+                            .requestMatchers(GET, // user can get orders by user ID
+                                    String.format("%s/order_details/**", apiPrefix))
+                            .hasAnyRole(Role.USER, Role.ADMIN)
+
+                            .requestMatchers(POST, // user can create an order
+                                    String.format("%s/order_details/**", apiPrefix))
+                            .hasRole(Role.USER)
+
+                            .requestMatchers(PUT, // only admin can update an order
+                                    String.format("%s/order_details/**", apiPrefix))
+                            .hasRole(Role.ADMIN)
+
+                            .requestMatchers(DELETE, // only admin can delete an order
+                                    String.format("%s/order_details/**", apiPrefix))
+                            .hasRole(Role.ADMIN)
 
                             .anyRequest().authenticated();
                 });

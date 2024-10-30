@@ -4,6 +4,7 @@ import com.example.shopapp.components.JwtUtils;
 import com.example.shopapp.dtos.UserDTO;
 import com.example.shopapp.exceptions.DataNotFoundException;
 import com.example.shopapp.exceptions.InvalidParamException;
+import com.example.shopapp.exceptions.PermissionDenyException;
 import com.example.shopapp.models.Role;
 import com.example.shopapp.models.User;
 import com.example.shopapp.repositories.RoleRepository;
@@ -28,13 +29,20 @@ public class UserServiceImpl implements UserService {
     private final AuthenticationManager authenticationManager;
 
     @Override
-    public User createUser(UserDTO userDTO) throws DataNotFoundException {
+    public User createUser(UserDTO userDTO) throws DataNotFoundException, PermissionDenyException {
         // register user
         // create a new user and return it
         String phoneNumber = userDTO.getPhoneNumber();
 
         if (userRepository.existsByPhoneNumber(phoneNumber)) {
             throw new DataIntegrityViolationException("Phone number already exists");
+        }
+
+        Role role = roleRepository.findById(userDTO.getRoleId())
+                .orElseThrow(() -> new DataNotFoundException("Role not found"));
+
+        if (role.getName().toUpperCase().equals(Role.ADMIN)) {
+            throw new PermissionDenyException("Cannot create an admin account");
         }
 
         // convert from UserDTO to User
@@ -46,8 +54,6 @@ public class UserServiceImpl implements UserService {
                 .facebookAccountId(userDTO.getFacebookAccountId())
                 .googleAccountId(userDTO.getGoogleAccountId())
                 .build();
-        Role role = roleRepository.findById(userDTO.getRoleId())
-                .orElseThrow(() -> new DataNotFoundException("Role not found"));
         newUser.setRole(role);
         if ((userDTO.getFacebookAccountId() == null || userDTO.getFacebookAccountId().isEmpty())
                 && (userDTO.getGoogleAccountId() == null || userDTO.getGoogleAccountId()
